@@ -2671,6 +2671,7 @@ local_transaction(void **state)
 	iod.iod_name  = akey;
 	iod.iod_recxs = NULL;
 	iod.iod_nr    = 1;
+	d_iov_set(&sgl.sg_iovs[0], (void *)first, iod.iod_size);
 
 	/* XXX */
 	// d_iov_set(&fetch_sgl.sg_iovs[0], (void *)buf, sizeof(buf));
@@ -2683,8 +2684,6 @@ local_transaction(void **state)
 	// printf("dkey[0] buf = %.*s\n", (int)strlen(first), buf);
 	// fflush(stdout);
 	/* XXX */
-
-	d_iov_set(&sgl.sg_iovs[0], (void *)first, iod.iod_size);
 
 	for (i = 0; i < 2; i++) {
 		rc = vos_local_tx_begin(arg->ctx.tc_po_hdl, &dth);
@@ -2715,28 +2714,40 @@ local_transaction(void **state)
 		assert_rc_equal(rc, passed_rc);
 
 		d_iov_set(&fetch_sgl.sg_iovs[0], (void *)buf, sizeof(buf));
-		iod.iod_size = strlen(first);
+		iod.iod_size = UINT64_MAX;
 		memset(buf, 'x', sizeof(buf));
-		printf("dkey[0] buf = %.*s\n", (int)strlen(first), buf);
-		printf("dkey[0] buf2 = %.*s\n", (int)strlen(first), buf2);
 		rc =
 		    vos_obj_fetch(arg->ctx.tc_co_hdl, oid, epoch, 0, &dkey[0], 1, &iod, &fetch_sgl);
 		assert_rc_equal(rc, 0);
 		printf("size=" DF_U64 "\n", iod.iod_size);
-		printf("dkey[0] buf = %.*s\n", (int)strlen(first), buf);
-		printf("dkey[0] buf2 = %.*s\n", (int)strlen(first), buf2);
 		fflush(stdout);
-		assert_memory_equal(buf, buf2, sizeof(buf));
+		if (i == 0) {
+			/** On abort,
+			 * the value is not meant to be found hence the output size == 0 */
+			assert_int_equal(iod.iod_size, 0);
+		} else {
+			/** On commit, the value is expected to be available */
+			printf("dkey[0] buf  = %.*s\n", (int)strlen(first), buf);
+			printf("dkey[0] buf2 = %.*s\n", (int)strlen(first), buf2);
+			fflush(stdout);
+			assert_int_equal(iod.iod_size, (int)strlen(first));
+			assert_int_equal(fetch_sgl.sg_iovs[0].iov_len, (int)strlen(first));
+			assert_memory_equal(buf, buf2, fetch_sgl.sg_iovs[0].iov_len);
+		}
 
 		d_iov_set(&fetch_sgl.sg_iovs[0], (void *)buf, sizeof(buf));
-		iod.iod_size = strlen(first);
-		memset(buf2, 'x', sizeof(buf2));
+		iod.iod_size = UINT64_MAX;
 		memset(buf, 'x', sizeof(buf));
+		memset(buf2, 'x', sizeof(buf2));
 		rc =
 		    vos_obj_fetch(arg->ctx.tc_co_hdl, oid, epoch, 0, &dkey[1], 1, &iod, &fetch_sgl);
 		assert_rc_equal(rc, 0);
-		printf("dkey[1] buf = %.*s\n", (int)strlen(first), buf);
-		printf("dkey[1] buf2 = %.*s\n", (int)strlen(first), buf2);
+		printf("size=" DF_U64 "\n", iod.iod_size);
+		fflush(stdout);
+		/** The punched key is not meant to be found hence the output size == 0 */
+		assert_int_equal(iod.iod_size, 0);
+		assert_int_equal(fetch_sgl.sg_iovs[0].iov_len, 0);
+		/** and SGL buffers are not affected by the fetch operation */
 		assert_memory_equal(buf, buf2, sizeof(buf));
 		printf("pass #%d finished\n", i);
 		fflush(stdout);
