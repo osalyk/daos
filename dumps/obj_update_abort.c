@@ -378,7 +378,310 @@ vos_obj_update_ex
                                                                                                         pmem_tx_add_ptr /* umm->umm_ops->mo_tx_add_ptr(umm, ptr, size); */
                                                                                                                 pmemobj_tx_add_range_direct
                                                 btr_tx_end(tcx, rc);
-                                                        XXX
-                                                                                                        
-
-
+                                                                return -DER_NONEXIST;
+                                        switch (rc) {
+                                        case -DER_NONEXIST:
+                                                /* ilog == NULL */
+                                                vos_ilog_ts_add(ts_set, ilog, key->iov_buf, (int)key->iov_len);
+                                        if (rc == -DER_NONEXIST) {
+                                                /* flags & SUBTR_CREATE */
+                                                dbtree_upsert(toh, BTR_PROBE_BYPASS, intent, key, &riov, NULL);
+                                                        btr_tx_begin(tcx);
+                                                                umem_tx_begin
+                                                                        pmem_tx_begin /* umm->umm_ops->mo_tx_begin(umm, txd); */
+                                                                                pmemobj_tx_begin(pop, NULL, TX_PARAM_NONE);
+                                                        btr_upsert(tcx, opc, intent, key, val, val_out);
+                                                                switch (rc) {
+                                                                case PROBE_RC_NONE:
+                                                                        btr_insert(tcx, key, val, val_out);
+                                                                                btr_rec_alloc(tcx, key, val, rec, val_out);
+                                                                                        ktr_rec_alloc /* btr_ops(tcx)->to_rec_alloc(&tcx->tc_tins, key, val, rec, val_out); */
+                                                                                                ilog_create(&tins->ti_umm, &krec->kr_ilog);
+                                                                                                        ilog_ptr_set(&lctx, root, &tmp);
+                                                                                                                ilog_ptr_set_full
+                                                                                                                        ilog_tx_begin(lctx);
+                                                                                                                                umem_tx_begin(lctx->ic_umm, NULL);
+                                                                                                                                        pmem_tx_begin /* umm->umm_ops->mo_tx_begin(umm, txd); */
+                                                                                                                                                pmemobj_tx_begin(pop, NULL, TX_PARAM_NONE);
+                                                                                                                        umem_tx_add_ptr(lctx->ic_umm, dest, len);
+                                                                                                                                pmem_tx_add_ptr /* umm->umm_ops->mo_tx_add_ptr(umm, ptr, size); */
+                                                                                                                                        pmemobj_tx_add_range_direct(ptr, size);
+                                                                                                                        memcpy(dest, src, len);
+                                                                                                        ilog_tx_end(&lctx, rc);
+                                                                                                                /* lctx->ic_ver_inc == false */
+                                                                                                                umem_tx_end(lctx->ic_umm, rc);
+                                                                                                                        umem_tx_end_ex(umm, err, NULL);
+                                                                                                                                umem_tx_commit_ex(umm, data);
+                                                                                                                                        pmem_tx_commit /* umm->umm_ops->mo_tx_commit(umm, data); */
+                                                                                                                                                pmemobj_tx_commit
+                                                                                                                                                pmemobj_tx_end
+                                                                                                ktr_rec_store(tins, rec, key_iov, rbund);
+                                                                                                        memcpy(kbuf, iov->iov_buf, iov->iov_len);
+                                                                                                        krec->kr_size = iov->iov_len;
+                                                                                btr_root_start(tcx, rec);
+                                                                                        btr_node_alloc(tcx, &nd_off);
+                                                                                                if (btr_ops(tcx)->to_node_alloc != NULL)
+                                                                                                        pmem_tx_alloc /* nd_off = btr_ops(tcx)->to_node_alloc(&tcx->tc_tins, btr_node_size(tcx)); */
+                                                                                                                pmemobj_tx_xalloc
+                                                                                        btr_node_set(tcx, nd_off, BTR_NODE_ROOT | BTR_NODE_LEAF);
+                                                                                        rec_dst = btr_node_rec_at(tcx, nd_off, 0);
+                                                                                        btr_rec_copy(tcx, rec_dst, rec, 1);
+                                                                                        if (btr_has_tx(tcx)) {
+                                                                                                btr_root_tx_add(tcx);
+                                                                                                        umem_tx_add_ptr(btr_umm(tcx), tcx->tc_tins.ti_root, sizeof(struct btr_root));
+                                                                                                                pmem_tx_add_ptr /* umm->umm_ops->mo_tx_add_ptr(umm, ptr, size); */
+                                                                                                                        pmemobj_tx_add_range_direct
+                                                        btr_tx_end(tcx, rc);
+                                                                /* rc == 0 */
+							        rc = umem_tx_commit(btr_umm(tcx)); 
+							      		umem_tx_commit_ex(umm, NULL);
+										if (umm->umm_ops->mo_tx_commit)
+											return umm->umm_ops->mo_tx_commit(umm, data);
+                                                                                        pmem_tx_commit(struct umem_instance *umm, void *data)  
+												pmemobj_tx_commit();
+												rc = pmemobj_tx_end();
+						vos_ilog_ts_ignore(vos_obj2umm(obj), &krec->kr_ilog);
+						vos_ilog_ts_mark(ts_set, &krec->kr_ilog);
+							uint32_t *idx = ilog_ts_idx_get(ilog);
+							vos_ts_set_mark_entry(ts_set, idx);
+								if (!vos_ts_in_tx(ts_set) || *idx >= ts_set->ts_init_count)
+									return;
+					if (sub_toh)
+						rc = tree_open_create(obj, tclass, flags, krec, created, sub_toh);
+							vos_evt_desc_cbs_init(&cbs, pool, coh);
+							type = daos_obj_id2type(obj->obj_df->vo_id.id_pub);
+							ta = obj_tree_find_attr(tclass);
+							rc = dbtree_create_inplace_ex(ta->ta_class, tree_feats, ta->ta_order, uma, &krec->kr_btr, coh, pool, sub_toh);
+								rc = btr_context_create(BTR_ROOT_NULL, root, tree_class, tree_feats, tree_order, uma, coh, priv, &tcx);
+									/* tcx != NULL*/
+									rc = btr_class_init(root_off, root, tree_class, &tree_feats, uma, coh, priv, &tcx->tc_tins);
+										rc = umem_class_init(uma, &tins->ti_umm);
+											set_offsets(umm);
+												/* case UMEM_CLASS_PMEM: */
+												root_oid = pmemobj_root(pop, 0);
+												root = pmemobj_direct(root_oid);
+										/* rc == 0 */
+										if (tc->tc_feats & BTR_FEAT_DYNAMIC_ROOT)
+											*tree_feats |= BTR_FEAT_DYNAMIC_ROOT;
+									root = tcx->tc_tins.ti_root;
+									if (root == NULL || root->tr_class == 0) { /* tree creation */
+										tcx->tc_class		= tree_class;
+										tcx->tc_feats		= tree_feats;
+										tcx->tc_order		= tree_order;
+										depth			= 0;
+										D_DEBUG(DB_TRACE, "Create context for a new tree\n");
+									btr_context_set_depth(tcx, depth);
+								rc = btr_tx_tree_init(tcx, root);
+									rc = btr_tx_begin(tcx);
+										return umem_tx_begin(btr_umm(tcx), NULL);
+									rc = btr_tree_init(tcx, root);
+										return btr_root_init(tcx, root, true);
+											if (UMOFF_IS_NULL(tins->ti_root_off) && btr_has_tx(tcx)) {
+												rc = btr_root_tx_add(tcx);
+													rc = umem_tx_add_ptr(btr_umm(tcx), tcx->tc_tins.ti_root, sizeof(struct btr_root));
+											root->tr_node_size = 1;
+									return btr_tx_end(tcx, rc);
+										rc = umem_tx_commit(btr_umm(tcx));
+								*toh = btr_tcx2hdl(tcx);
+							/* rc = 0 */
+					if (krecp != NULL)
+						*krecp = krec;
+				/* rc = 0 */	
+				rc = vos_ilog_update(ioc->ic_cont, &krec->kr_ilog, &ioc->ic_epr, ioc->ic_bound, &obj->obj_ilog_info, &ioc->ic_dkey_info, update_cond, ioc->ic_ts_set);
+					struct dtx_handle *dth = vos_dth_get(cont->vc_pool->vp_sysdb);
+						struct vos_tls	*tls = vos_tls_get(standalone);
+					/* parent == NULL*/
+					/* has_cond = false */
+					rc = vos_ilog_fetch(vos_cont2umm(cont), vos_cont2hdl(cont), DAOS_INTENT_UPDATE, ilog, epr->epr_hi, bound, has_cond, NULL, parent, info);
+						return vos_ilog_fetch_internal(umm, coh, intent, ilog, &epr, bound, has_cond, punched, parent, info);
+							vos_ilog_desc_cbs_init(&cbs, coh);
+							rc = ilog_fetch(umm, ilog, &cbs, intent, has_cond, &info->ii_entries);
+								if (ilog_empty(root))
+									goto out;
+							if (rc == -DER_NONEXIST)
+								goto init;
+					if (rc == -DER_NONEXIST)
+						goto update;
+					/* update */
+						vos_ilog_desc_cbs_init(&cbs, vos_cont2hdl(cont));
+						rc = ilog_open(vos_cont2umm(cont), ilog, &cbs, &loh);
+							rc = ilog_ctx_create(umm, (struct ilog_root *)root, cbs, &lctx);
+							*loh = ilog_lctx2hdl(lctx);
+						/* rc = 0 */
+						rc = ilog_update(loh, &max_epr, epr->epr_hi, (dtx_is_real_handle(dth) ? dth->dth_op_seq : VOS_SUB_OP_MAX), false);
+							/* punch = false*/
+								id.id_punch_minor_eph = 0;
+								id.id_update_minor_eph = minor_eph;
+							return ilog_modify(loh, &id, &range, ILOG_OP_UPDATE);
+								if (ilog_empty(root)) {
+									rc = ilog_log_add(lctx, &root->lr_id);
+								rc = ilog_tx_end(lctx, rc);
+									if (lctx->ic_ver_inc) {
+										rc = umem_tx_add_ptr(lctx->ic_umm, &lctx->ic_root->lr_magic, sizeof(lctx->ic_root->lr_magic));
+											return umm->umm_ops->mo_tx_add_ptr(umm, ptr, size);
+										return umem_tx_end(lctx->ic_umm, rc);
+											return umem_tx_end_ex(umm, err, NULL);
+												return umem_tx_commit_ex(umm, data);
+													return umm->umm_ops->mo_tx_commit(umm, data);
+						ilog_close(loh);
+				/* rc = 0*/
+				for (i = 0; i < ioc->ic_iod_nr; i++) {
+					iod_set_cursor(ioc, i);
+					rc = akey_update(ioc, pm_ver, ak_toh, minor_epc);
+						rc = key_tree_prepare(obj, ak_toh, VOS_BTR_AKEY, &iod->iod_name, flags, DAOS_INTENT_UPDATE, &krec, &toh, ioc->ic_ts_set);
+							rc = dbtree_fetch(toh, BTR_PROBE_EQ, intent, key, NULL, &riov);
+								tcx = btr_hdl2tcx(toh);
+								rc = btr_verify_key(tcx, key);
+								rc = btr_probe_key(tcx, opc, intent, key);
+									btr_hkey_gen(tcx, key, hkey);
+										btr_ops(tcx)->to_hkey_gen(&tcx->tc_tins, key, hkey);
+								case PROBE_RC_NONE:
+									D_DEBUG(DB_TRACE, "Key does not exist.\n");
+									return -DER_NONEXIST;
+							case -DER_NONEXIST:
+								tmprc = vos_ilog_ts_add(ts_set, ilog, key->iov_buf, (int)key->iov_len);
+							if (rc == -DER_NONEXIST) {
+								rc = dbtree_upsert(toh, BTR_PROBE_BYPASS, intent, key, &riov, NULL);
+								/* rc = 0 */
+								vos_ilog_ts_ignore(vos_obj2umm(obj), &krec->kr_ilog);
+								vos_ilog_ts_mark(ts_set, &krec->kr_ilog);
+							if (sub_toh) {
+								rc = tree_open_create(obj, tclass, flags, krec, created, sub_toh);
+									vos_evt_desc_cbs_init(&cbs, pool, coh);
+									ta = obj_tree_find_attr(tclass);
+										if (ta->ta_class == tree_class)
+											return ta;
+									rc = dbtree_create_inplace_ex(ta->ta_class, tree_feats, ta->ta_order, uma, &krec->kr_btr, coh, pool, sub_toh);
+										rc = btr_context_create(BTR_ROOT_NULL, root, tree_class, tree_feats, tree_order, uma, coh, priv, &tcx);
+											if (root == NULL || root->tr_class == 0) { /* tree creation */
+												tcx->tc_class		= tree_class;
+												tcx->tc_feats		= tree_feats;
+												tcx->tc_order		= tree_order;
+												depth			= 0;
+												D_DEBUG(DB_TRACE, "Create context for a new tree\n");
+											btr_context_set_depth(tcx, depth);
+										rc = btr_tx_tree_init(tcx, root);
+						/* rc = 0 */
+						rc = vos_ilog_update(ioc->ic_cont, &krec->kr_ilog, &ioc->ic_epr, ioc->ic_bound, &ioc->ic_dkey_info, &ioc->ic_akey_info, update_cond, ioc->ic_ts_set);
+							rc = vos_ilog_fetch(vos_cont2umm(cont), vos_cont2hdl(cont), DAOS_INTENT_UPDATE, ilog, epr->epr_hi, bound, has_cond, NULL, parent, info);
+								return vos_ilog_fetch_internal(umm, coh, intent, ilog, &epr, bound, has_cond, punched, parent, info);
+									vos_ilog_desc_cbs_init(&cbs, coh);
+									rc = ilog_fetch(umm, ilog, &cbs, intent, has_cond, &info->ii_entries);
+									if (rc == -DER_NONEXIST)
+										goto init;
+									/* init */
+										/* punched = NULL */
+										/* parent != NULL */
+							if (rc == -DER_NONEXIST)
+								goto update;
+							/* update */
+							vos_ilog_desc_cbs_init(&cbs, vos_cont2hdl(cont));
+							rc = ilog_open(vos_cont2umm(cont), ilog, &cbs, &loh);
+								rc = ilog_ctx_create(umm, (struct ilog_root *)root, cbs, &lctx);
+								*loh = ilog_lctx2hdl(lctx);
+							rc = ilog_update(loh, &max_epr, epr->epr_hi, (dtx_is_real_handle(dth) ? dth->dth_op_seq : VOS_SUB_OP_MAX), false);
+								/* punch = false */
+								id.id_punch_minor_eph = 0;
+								id.id_update_minor_eph = minor_eph;
+								range = *epr;
+								return ilog_modify(loh, &id, &range, ILOG_OP_UPDATE);
+							ilog_close(loh);
+								ilog_decref(lctx);
+						/* rc = 0 */
+						if (iod->iod_type == DAOS_IOD_SINGLE)
+							rc = akey_update_single(toh, pm_ver, iod->iod_size, gsize, ioc, minor_epc);
+								ci_set_null(&csum);
+									ci_set(csum_buf, NULL, 0, 0, 0, 0, 0);
+								d_iov_set(&kiov, &key, sizeof(key));
+								umoff = iod_update_umoff(ioc);
+								biov = iod_update_biov(ioc);
+									bsgl = bio_iod_sgl(ioc->ic_biod, ioc->ic_sgl_at);
+								tree_rec_bundle2iov(&rbund, &riov);
+									memset(rbund, 0, sizeof(*rbund));
+									d_iov_set(iov, rbund, sizeof(*rbund));
+								value_csum = vos_csum_at(ioc->ic_iod_csums, ioc->ic_sgl_at);
+								/* value_csum = NULL */
+								rc = dbtree_update(toh, &kiov, &riov);
+								/* rc = 0 */
+							goto out;
+							if (daos_handle_is_valid(toh))
+								key_tree_release(toh, is_array);
+									rc = dbtree_close(toh);
+				key_tree_release(ak_toh, false);
+					rc = dbtree_close(toh);
+			/* err = 0 */
+			err = vos_ioc_mark_agg(ioc);
+			vos_ts_set_upgrade(ioc->ic_ts_set);
+			vos_ts_set_update(ioc->ic_ts_set, ioc->ic_epr.epr_hi);
+				vos_ts_in_tx(ts_set)
+			vos_ts_set_wupdate(ioc->ic_ts_set, ioc->ic_epr.epr_hi);
+				vos_ts_in_tx(ts_set)
+			err = vos_tx_end(ioc->ic_cont, dth, &ioc->ic_rsrvd_scm, &ioc->ic_blk_exts, tx_started, ioc->ic_biod, err);
+				if (!dtx_is_valid_handle(dth)) {
+				return vos_tx_end_internal(cont->vc_pool, dth, rsrvd_scmp, nvme_exts, biod, err);
+					/* dth->dth_local = 0 */
+					cont = vos_hdl2cont(dth->dth_coh);
+					/* rsrvd_scmp != NULL */
+					d_list_splice_init(nvme_exts, &dru->dru_nvme);
+					/* dth->dth_local_tx_started = 1 */
+					else if (dth->dth_modification_cnt <= dth->dth_op_seq) {
+						goto commit;
+					/* commit */
+					err = vos_tx_publish(dth, true);
+						/* dth->dth_local = 0 */
+						cont = vos_hdl2cont(dth->dth_coh);
+						umm  = vos_cont2umm(cont);
+						for (i = 0; i < dth->dth_rsrvd_cnt; i++) {
+							rc = vos_publish_scm(umm, dru->dru_scm, publish);
+								rc = umem_tx_publish(umm, rsrvd_scm);
+							rc = vos_publish_blocks(cont, &dru->dru_nvme, publish, VOS_IOS_GENERIC);
+						vos_publish_blocks(cont, &dth->dth_deferred_nvme, false, VOS_IOS_GENERIC);
+					vos_dth_set(NULL, pool->vp_sysdb);
+					err = umem_tx_end(vos_pool2umm(pool), err);
+						return umem_tx_end_ex(umm, err, NULL);
+			/* err = 0 */
+			vos_dedup_process(vos_cont2pool(ioc->ic_cont), &ioc->ic_dedup_entries, false);
+			/* dth->dth_cos_done = 1 */
+			vos_space_unhold(vos_cont2pool(ioc->ic_cont), &ioc->ic_space_held[0]);
+			vos_ioc_destroy(ioc, err != 0);
+				bio_iod_free(ioc->ic_biod);
+					bio_sgl_fini(&biod->bd_sgls[i]);
+				dcs_csum_info_list_fini(&ioc->ic_csum_list);
+				vos_obj_release(vos_obj_cache_current(ioc->ic_cont->vc_pool->vp_sysdb), ioc->ic_obj, evict);
+				vos_ioc_reserve_fini(ioc);
+				vos_ilog_fetch_finish(&ioc->ic_dkey_info);
+				vos_ilog_fetch_finish(&ioc->ic_akey_info);
+				vos_cont_decref(ioc->ic_cont);
+				vos_ts_set_free(ioc->ic_ts_set);
+/* rc = 0 */
+if (i == 0) {
+	/** Abort first time */
+	memset(buf2, 'x', sizeof(buf2));
+	passed_rc = -DER_EXIST;
+rc = vos_local_tx_end(dth, passed_rc);
+	/** Indicate to local tx that we want to actually commit */
+	dth->dth_local_complete = 1;
+	/** We stored the pool handle in the dth_coh field in this case */
+	rc = vos_tx_end_internal(vos_hdl2pool(dth->dth_coh), dth, NULL, NULL, NULL, err);
+		dth->dth_local_tx_started = 0;
+		vos_dth_set(NULL, pool->vp_sysdb);
+		err = umem_tx_end(vos_pool2umm(pool), err);
+			return umem_tx_end_ex(umm, err, NULL);
+				return umem_tx_abort(umm, err);
+		/* Do not set dth->dth_pinned. Upper layer caller can do that via
+		* vos_dtx_cleanup() when necessary. */
+		vos_tx_publish(dth, false);
+			/** We stored the pool handle in this field in this case */
+			pool = vos_hdl2pool(dth->dth_coh);
+			umm  = vos_pool2umm(pool);
+			rc = vos_publish_scm(umm, dru->dru_scm, publish);
+				umem_cancel(umm, rsrvd_scm);
+			/** Function checks if list is empty */
+			rc = vos_publish_blocks(cont, &dru->dru_nvme, publish, VOS_IOS_GENERIC);
+			rc = vos_publish_scm(umm, scm, publish);
+				umem_cancel(umm, rsrvd_scm);
+			/** Handle the deferred NVMe cancellations */
+			vos_publish_blocks(cont, &dth->dth_deferred_nvme, false, VOS_IOS_GENERIC);
+		vos_dtx_cleanup_internal(dth);
+	vos_dtx_rsrvd_fini(dth);
+/* rc = -1004 */
