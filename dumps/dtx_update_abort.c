@@ -269,101 +269,248 @@ io_test_obj_update
                         /* rc == 0 */
                         dth->dth_local_tx_started = 1; /* !!! */
                 /* dth->dth_dti_cos_count == 0 */
-                vos_obj_hold(vos_obj_cache_current(ioc->ic_cont->vc_pool->vp_sysdb), ioc->ic_cont, ioc->ic_oid, &ioc->ic_epr, ioc->ic_bound, VOS_OBJ_CREATE | VOS_OBJ_VISIBLE, DAOS_INTENT_UPDATE, &ioc->ic_obj, ioc->ic_ts_set);
+                /* struct vos_container	*ic_cont; */
+                /* daos_unit_oid_t ic_oid; */
+                /* daos_epoch_range_t ic_epr; */
+                /* daos_epoch_t ic_bound; The epoch bound including uncertainty */
+                /* struct vos_object *ic_obj; reference on the object; A cached object (DRAM data structure). */
+                /* struct vos_ts_set *ic_ts_set; */
+                vos_obj_hold(occ = vos_obj_cache_current(ioc->ic_cont->vc_pool->vp_sysdb), cont = ioc->ic_cont, oid = ioc->ic_oid, &ioc->ic_epr, ioc->ic_bound, flags = VOS_OBJ_CREATE | VOS_OBJ_VISIBLE, intent = DAOS_INTENT_UPDATE, &ioc->ic_obj, ts_set = ioc->ic_ts_set);
+                        vos_obj_cache_current(standalone)
+                                return vos_obj_cache_get(standalone);
+                                        /* struct vos_tls; VOS thread local storage structure */
+                                        /* struct daos_lru_cache *vtl_ocache; In-memory object cache for the PMEM object table */
+                                        return vos_tls_get(standalone)->vtl_ocache;
+                        struct vos_object *obj; /* A cached object (DRAM data structure). */
+                        struct daos_llink *lret;
+                        /* struct obj_lru_key; Local type for VOS LRU key. VOS LRU key must consist of Object ID and container UUID */
+                        struct obj_lru_key lkey;
+                        /* cont->vc_pool->vp_dying == 0 */
                         /* create == true */
-                        daos_lru_ref_hold(occ, &lkey, sizeof(lkey), create_flag, &lret);
-                                link = d_hash_rec_find(&lcache->dlc_htable, key, key_size);
-                                        idx = ch_key_hash(htable, key, ksize);
-                                        ch_bucket_lock(htable, idx, !is_lru);
-                                        link = ch_rec_find(htable, bucket, key, ksize, D_HASH_LRU_HEAD);
-                                                ch_key_cmp(htable, link, key, ksize)
-                                                        obj_lop_cmp_key /* llink->ll_ops->lop_cmp_keys(key, ksize, llink); */
-                                        /* link != NULL */
-                                        ch_rec_addref(htable, link);
-                                                lru_hop_rec_addref /* htable->ht_ops->hop_rec_addref != NULL */
-                                        ch_bucket_unlock(htable, idx, !is_lru);
-                                /* link != NULL */
-                                /* !d_list_empty(&llink->ll_qlink) */
-                                d_list_del_init(&llink->ll_qlink);
-                                *llink_pp = llink;
+                        /* visible_only == true */
+                        void *create_flag = cont;
+                        /* Create the key for obj cache */
+                        lkey.olk_cont = cont;
+                        lkey.olk_oid = oid;
+                        /* Find a ref in the cache \a lcache and take its reference. if reference is not found add it. */
+                        rc = daos_lru_ref_hold(lcache = occ, key = &lkey, ksize = sizeof(lkey), create_args = create_flag, llink = &lret);
                         /* rc == 0 */
-                        /** Object is in cache */
-                        obj = container_of(lret, struct vos_object, obj_llink);
-                        /* !obj->obj_zombie */
+                        /* Object is in cache */
+                        /* container_of(); given a pointer @ptr to the field @member embedded into type (usually struct) @type, return pointer to the embedding instance of @type. */
+	                /* struct daos_llink obj_llink; llink for daos lru cache */
+                        obj = container_of(ptr = lret, type = struct vos_object, member = obj_llink);
+                        /* obj->obj_zombie == false */
                         /* intent == DAOS_INTENT_UPDATE */
                         /* obj->obj_df != NULL */
                         /* create == true */
-                        vos_ilog_ts_ignore(vos_obj2umm(obj), &obj->obj_df->vo_ilog);
-                                /* XXX */
-                        tmprc = vos_ilog_ts_add(ts_set, &obj->obj_df->vo_ilog, &oid, sizeof(oid));
+	                /* struct vos_obj_df *obj_df; Persistent memory address of the object; VOS object, assume all objects are KV store... NB: PMEM data structure. */
+                        /* struct ilog_df vo_ilog; Incarnation log for the object; Opaque root for incarnation log */
+                        vos_ilog_ts_ignore(umem = vos_obj2umm(obj), ilog = &obj->obj_df->vo_ilog);
+                                /* DAOS_ON_VALGRIND == false */
+                                return;
+                        /* Check if the timestamps associated with the ilog are in cache.  If so, add them to the set. */
+                        tmprc = vos_ilog_ts_add(ts_set, ilog = &obj->obj_df->vo_ilog, record = &oid, rec_size = sizeof(oid));
                                 /* vos_ts_in_tx(ts_set) == true */
                                 /* ilog != NULL */
-                                idx = ilog_ts_idx_get(ilog);
+                                uint32_t *idx = ilog_ts_idx_get(ilog_df = ilog);
+                                        /*
+                                        struct ilog_root {
+                                                union {
+                                                        struct ilog_id		lr_id;
+                                                        struct ilog_tree	lr_tree;
+                                                };
+                                                uint32_t			lr_ts_idx;
+                                                uint32_t			lr_magic;
+                                        };
+                                        */
+                                        /* No validity check as index is just a constant offset */
+	                                struct ilog_root *root = (struct ilog_root *)ilog_df;
+                                        return &root->lr_ts_idx;
                                 vos_ts_set_add(ts_set, idx, record, rec_size);
+                                        uint64_t hash = 0;
                                         /* vos_ts_in_tx(ts_set) == true */
                                         /* idx != NULL */
-                                        vos_ts_lookup(ts_set, idx, false, &entry)
-                                                vos_ts_lookup_internal(ts_set, type, idx, entryp);
-                                                        found = lrua_lookup(info->ti_array, idx, &entry);
-                                                                lrua_lookupx_(array, *idx, (uint64_t)idx, entryp);
-                                                                        lrua_lookup_idx(array, idx, key, true);
-                                                                                sub = lrua_idx2sub(array, idx);
-                                                                        /* entry == NULL */
-                                                        /* found == false */
-                                        /* ts_set->ts_etype > VOS_TS_TYPE_CONT */
-                                        /* ts_set->ts_etype == VOS_TS_TYPE_OBJ */
+                                        /* ts_set->ts_etype == 1; type of next entry */
+                                        /* ts_set->ts_set_size == 4; size of the set */
+                                        vos_ts_lookup(ts_set, idx, reset = false, &entry);
+                                                /* found == false */
+                                                /* entry == NULL */
+                                        /* ts_set->ts_etype == 1 */
+                                        /* ts_set->ts_etype > VOS_TS_TYPE_CONT (0) */
+                                        /* ts_set->ts_etype == 1 */
+                                        /* sysdb pool should not come here */
+                                        /* ts_set->ts_etype == VOS_TS_TYPE_OBJ (1) */
+                                        /* daos_unit_oid_t; 192-bit object ID, it can identify a unique bottom level object. (a shard of upper level object). */
+                                        daos_unit_oid_t *oid = (daos_unit_oid_t *)rec;
+	                                /* daos_obj_id_t id_pub; Public section, high level object ID */
+                                        /* uint64_t lo; least significant (low) bits of object ID */
+                                        /* uint64_t hi; most significant (high) bits of object ID */
+                                        hash = oid->id_pub.lo ^ oid->id_pub.hi;
                                         /* idx != NULL */
+                                        /* Allocate a new entry in the set. */
                                         entry = vos_ts_alloc(ts_set, idx, hash);
-                                                /* vos_ts_in_tx(ts_set) == true */
-                                                vos_ts_set_get_info(ts_table, ts_set, &info, &hash_offset);
-                                                        /* ts_set->ts_init_count != 0 */
-                                                hash_idx = vos_ts_get_hash_idx(info, hash, hash_offset);
-                                                vos_ts_evict_lru(ts_table, &new_entry, idx, hash_idx, info->ti_type);
-                                                        lrua_alloc(ts_table->tt_type_info[type].ti_array, idx, &entry);
-                                                                lrua_allocx_(array, idx, (uint64_t)idx, entryp);
-                                                                        lrua_find_free(array, &new_entry, idx, key);
-                                                                                sub_find_free(array, sub, entryp, idx, key)
-                                                                                        lrua_remove_entry(array, sub, &sub->ls_free, entry, tree_idx);
-                                                                                        lrua_insert(sub, &sub->ls_lru, entry, tree_idx, true);
-                                                        /* rc == 0 */
-                                                        /* neg_entry != NULL */
-                                                        vos_ts_copy
-                                                                /* XXX */
-                                                        vos_ts_copy
-                                                                /* XXX */
+                                                /* (as above )*/
                                         /* entry != NULL */
+                                        /* uint32_t ti_type; Type identifier */
+                                        /* uint32_t ti_type; Type identifier */
+                                        expected_type = entry->te_info->ti_type;
+                                        /* ts_set->ts_init_count == 2 */
+                                        struct vos_ts_set_entry	*se = &ts_set->ts_entries[ts_set->ts_init_count - 1];
+                                        se->se_etype = ts_set->ts_etype;
+                                        /* se->se_etype == 1 */
+                                        /* se->se_etype > ts_set->ts_max_type */
+                                        ts_set->ts_max_type = se->se_etype;
+                                        /* expected_type != VOS_TS_TYPE_AKEY */
+                                        ts_set->ts_etype = expected_type + 1;
+                                        se->se_entry = entry;
+                                        se->se_create_idx = NULL;
                         /* tmprc == 0 */
                         /* obj->obj_discard == false */
-                        rc = vos_ilog_update(cont, &obj->obj_df->vo_ilog, epr, bound, NULL, &obj->obj_ilog_info, cond_mask, ts_set);
+                        /* flags == VOS_OBJ_CREATE | VOS_OBJ_VISIBLE */
+                        /* intent == DAOS_INTENT_UPDATE */
+                        /* ts_set != NULL */
+                        /* ts_set->ts_flags == 0 */
+                        /* Check the incarnation log if an update is needed and update it.  Refreshes the log into \p entries.*/
+                        /* struct vos_ilog_info	obj_ilog_info; Cache of incarnation log */
+                        rc = vos_ilog_update(cont, ilog = &obj->obj_df->vo_ilog, epr, bound, parent = NULL, info = &obj->obj_ilog_info, cond_flag = cond_mask, ts_set);
+                                dth = vos_dth_get(cont->vc_pool->vp_sysdb);
+                                daos_epoch_range_t max_epr = *epr;
                                 /* parent == NULL */
-                                /** Do a fetch first.  The log may already exist */
-                                rc = vos_ilog_fetch(vos_cont2umm(cont), vos_cont2hdl(cont), DAOS_INTENT_UPDATE, ilog, epr->epr_hi, bound, has_cond, NULL, parent, info);
+                                bool has_cond = cond == VOS_ILOG_COND_UPDATE || cond == VOS_ILOG_COND_INSERT;
+                                /* has_cond == false */
+                                /* Do a fetch first.  The log may already exist */
+                                /* Read (or refresh) the incarnation log into \p entries.  Internally, this will be a noop if the arguments are the same and nothing has changed since the last invocation. */
+                                rc = vos_ilog_fetch(umm = vos_cont2umm(cont), coh = vos_cont2hdl(cont), intent = DAOS_INTENT_UPDATE, ilog, epoch = epr->epr_hi, bound, has_cond, punched = NULL, parent, info);
+                                        daos_epoch_range_t epr;
+                                        epr.epr_lo = 0; /** Low bound of the epoch range */
+                                        epr.epr_hi = epoch; /** High bound of the epoch range */
                                         vos_ilog_fetch_internal(umm, coh, intent, ilog, &epr, bound, has_cond, punched, parent, info);
+                                                struct ilog_desc_cbs cbs; /* Near term hack to hook things up with existing DTX */
+                                                /* Initialize callbacks for vos incarnation log */
                                                 vos_ilog_desc_cbs_init(&cbs, coh);
-                                                ilog_fetch(umm, ilog, &cbs, intent, has_cond, &info->ii_entries);
-                                                        ilog_fetch_cached(umm, root, cbs, intent, has_cond, entries)
+                                                        cbs->dc_log_status_cb	= vos_ilog_status_get;
+                                                        cbs->dc_log_status_args	= (void *)(unsigned long)coh.cookie;
+                                                        cbs->dc_is_same_tx_cb = vos_ilog_is_same_tx;
+                                                        cbs->dc_is_same_tx_args = (void *)(unsigned long)coh.cookie;
+                                                        cbs->dc_log_add_cb = vos_ilog_add;
+                                                        cbs->dc_log_add_args = NULL;
+                                                        cbs->dc_log_del_cb = vos_ilog_del;
+                                                        cbs->dc_log_del_args = (void *)(unsigned long)coh.cookie;
+                                                /* Fetch the entire incarnation log.  This function will refresh only when the underlying log or the intent has changed.  If the struct is shared between multiple ULT's fetch should be done after every yield. */
+                                                /* struct ilog_entries; Structure for storing the full incarnation log for ilog_fetch. */
+                                                ilog_fetch(umm, root_df = ilog, &cbs, intent, has_cond, entries = &info->ii_entries);
+                                                        struct ilog_root *root = (struct ilog_root *)root_df;
+                                                        ilog_fetch_cached(umm, root, cbs, intent, has_cond, entries);
+                                                                struct ilog_priv *priv = ilog_ent2priv(entries);
+                                                                        /* uint8_t ie_priv[ILOG_PRIV_SIZE]; Private log data */
+                                                                        return (struct ilog_priv *)&entries->ie_priv[0];
+                                                                /* struct ilog_context ip_lctx; Embedded context for current log root */
+                                                                struct ilog_context *lctx = &priv->ip_lctx;
+                                                                /* struct ilog_root *ic_root; Root pointer */
+                                                                /* priv->ip_lctx.ic_root == root */
+                                                                /* int32_t ip_log_version; Version of log from prior fetch */
+                                                                /* priv->ip_log_version != ilog_mag2ver(root->lr_magic) */
+                                                                lctx->ic_root = root; /* Root pointer */
+                                                                lctx->ic_root_off = umem_ptr2off(umm, root); /* umem offset of root pointer */
+                                                                lctx->ic_umm = umm; /** umem instance */
+                                                                lctx->ic_cbs = *cbs; /** Cache the callbacks */
+                                                                lctx->ic_ref = 0; /** ref count for iterator */
+                                                                lctx->ic_in_txn = false; /** In pmdk transaction marker */
+                                                                lctx->ic_ver_inc = false; /** version needs incrementing */
+                                                                entries->ie_num_entries = 0; /** Number of entries in the log */
+                                                                priv->ip_intent = intent; /** Intent for prior fetch */
+                                                                priv->ip_log_version = ilog_mag2ver(lctx->ic_root->lr_magic); /** Version of log from prior fetch */
+                                                                priv->ip_rc = 0; /** Cached return code for fetch operation */
                                                                 return false;
-                                                        /* ilog_empty(root) == false */
+                                                        struct ilog_context *lctx = &priv->ip_lctx;
+                                                        ilog_empty(root);
+                                                                /** The ilog is split into two parts.   If there is one entry, the ilog
+                                                                 *  is embedded into the root df struct.   If not, a b+tree is used.
+                                                                 *  The tree is used more like a set where only the key is used.
+                                                                 */
+                                                                /* (!root->lr_tree.it_embedded) == false */
+                                                                /* root->lr_tree.it_root != UMOFF_NULL (0) */
+                                                                return !root->lr_tree.it_embedded && root->lr_tree.it_root == UMOFF_NULL;
+                                                        struct ilog_array_cache cache;
                                                         ilog_log2cache(lctx, &cache);
                                                                 /* ilog_empty(lctx->ic_root) == false */
-                                                                /* lctx->ic_root->lr_tree.it_embedded == true */ 
+                                                                /* lctx->ic_root->lr_tree.it_embedded == true */
+                                                                /* struct ilog_id lr_id; */
+                                                                /*
+                                                                struct ilog_id {
+                                                                        // DTX of entry
+                                                                        union {
+                                                                                uint64_t	id_value;
+                                                                                struct {
+                                                                                        uint32_t	 id_tx_id;
+                                                                                        uint16_t	 id_punch_minor_eph;
+                                                                                        uint16_t	 id_update_minor_eph;
+                                                                                };
+                                                                        };
+                                                                        // timestamp of entry
+                                                                        daos_epoch_t	id_epoch;
+                                                                };
+                                                                */
+                                                                /* struct ilog_id *ac_entries; Pointer to entries */
+                                                                cache->ac_entries = &lctx->ic_root->lr_id;
+                                                                cache->ac_nr = 1; /** Number of entries */
+                                                                cache->ac_array = NULL; /** Pointer to array, if applicable */
                                                         rc = prepare_entries(entries, &cache);
                                                                 /* cache->ac_nr <= NUM_EMBEDDED */
+                                                                /* struct ilog_id *ie_ids; Array of log entries */
+                                                                entries->ie_ids = cache->ac_entries;
+                                                        /* rc == 0 */
+                                                        /* intent == DAOS_INTENT_UPDATE */
+                                                        /* has_cond == false */
+                                                        /* retry == false */
                                                         for (i = 0; i < cache.ac_nr; i++) {
+                                                                struct ilog_id *id = &cache.ac_entries[i];
                                                                 status = ilog_status_get(lctx, id, intent, retry);
-                                                                        vos_ilog_status_get /* cbs->dc_log_status_cb(lctx->ic_umm, id->id_tx_id, id->id_epoch, intent, retry, cbs->dc_log_status_args);*/
-                                                                                vos_dtx_check_availability(coh, tx_id, epoch, intent = DAOS_INTENT_UPDATE, type = DTX_RT_ILOG, retry);
+                                                                        struct ilog_desc_cbs *cbs = &lctx->ic_cbs;
+                                                                        /* cbs->dc_log_status_cb != NULL */
+                                                                        vos_ilog_status_get /* cbs->dc_log_status_cb(lctx->ic_umm, tx_id = id->id_tx_id, epoch = id->id_epoch, intent, retry, args = cbs->dc_log_status_args); */
+                                                                                daos_handle_t coh;
+                                                                                coh.cookie = (unsigned long)args;
+                                                                                vos_dtx_check_availability(coh, entry = tx_id, epoch, intent, type = DTX_RT_ILOG, retry);
+                                                                                        struct vos_container *cont = vos_hdl2cont(coh);
+                                                                                        dth = vos_dth_get(cont->vc_pool->vp_sysdb);
                                                                                         /* dth != NULL */
-                                                                                        switch (type) {
-                                                                                        case DTX_RT_ILOG:
-                                                                                                break;
+                                                                                        /* dth->dth_for_migration == false */
+                                                                                        /* type == DTX_RT_ILOG */
                                                                                         /* intent != DAOS_INTENT_CHECK */
-                                                                                        dtx_is_committed(entry, cont, epoch)
-                                                                                /* rc == ALB_AVAILABLE_CLEAN */
-                                                                        /* rc == ILOG_COMMITTED */
-                                                                /* status == 1 */
+                                                                                        dtx_is_committed(tx_lid = entry, cont, epoch);
+                                                                                                /* tx_lid == DTX_LID_COMMITTED (0) */ /** Used for marking an in-tree record committed */
+                                                                                /* rc == ALB_AVAILABLE_CLEAN (1) */ /* available, no (or not care) pending modification */
+                                                                        /* rc == ILOG_COMMITTED (1) */ /** Log entry is visible to caller */
+                                                                /* status == ILOG_COMMITTED (1) */
+                                                                /* struct ilog_info *ie_info; Parsed information about each ilog entry */
+                                                                entries->ie_info[entries->ie_num_entries].ii_removed = 0; /** Used internally to indicate removal during aggregation */
+		                                                entries->ie_info[entries->ie_num_entries++].ii_status = status; /** Status of ilog entry */
                                                         /* entries->ie_num_entries != 0 */
+                                                        priv->ip_rc = rc; /** Cached return code for fetch operation */
                                                 /* rc == 0 */
+                                                info->ii_uncommitted = 0; /** Visible uncommitted epoch */
+                                                info->ii_create = 0; /** If non-zero, earliest creation timestamp in current incarnation. */
+                                                info->ii_full_scan = true; /** All data is contained within specified epoch range */
+                                                /** If non-zero, subsequent committed punch.  Minor epoch not used for
+                                                 *  subsequent punch as it does not need replay if it's intermediate
+                                                 */
+                                                info->ii_next_punch = 0;
+                                                /** True if there is an uncertain update.  If a punch is uncertain,
+                                                 *  it should always cause a failure in vos_ilog_fetch.  But update
+                                                 *  conflict depends on the operation doing the check.
+                                                 */
+                                                info->ii_uncertain_create = 0;
+                                                info->ii_empty = true; /** The entity has no valid log entries */
+                                                /* struct vos_punch_record ii_prior_punch; If non-zero, prior committed punch */
+                                                info->ii_prior_punch.pr_epc = 0; /** Major epoch of punch */
+                                                info->ii_prior_punch.pr_minor_epc = 0; /** Minor epoch of punch */
+                                                /* struct vos_punch_record ii_prior_any_punch; If non-zero, prior committed or uncommitted punch */
+                                                info->ii_prior_any_punch.pr_epc = 0;
+                                                info->ii_prior_any_punch.pr_minor_epc = 0;
+
+                                                /* TODO */
+                                                
                                                 rc = vos_parse_ilog(info, epr, bound, &punch);
                                                         ilog_foreach_entry_reverse(&info->ii_entries, &entry) {
                                                                 /* vos_ilog_punched(&entry, punch) == false */
