@@ -1,4 +1,4 @@
-// -f VOS510
+// -f VOS510 -X
 // vts_dtx_abort_visibility
 vts_dtx_begin // a test-specific dtx_begin() altenative
         vts_init_dte
@@ -72,8 +72,8 @@ io_test_obj_update
                         vos_ilog_fetch_init(&ioc->ic_akey_info);
                         vos_ioc_reserve_init(ioc, dth);
                                 for (i = 0; i < ioc->ic_iod_nr; i++) {
-		                        daos_iod_t *iod = &ioc->ic_iods[i];
-		                        total_acts += iod->iod_nr;
+                                        daos_iod_t *iod = &ioc->ic_iods[i];
+                                        total_acts += iod->iod_nr;
                                 /* struct umem_rsrvd_act *ic_rsrvd_scm; reserved SCM extents */
                                 /* Allocate array of structures for reserved actions */
                                 umem_rsrvd_act_alloc(vos_ioc2umm(ioc), &ioc->ic_rsrvd_scm, total_acts);
@@ -85,7 +85,7 @@ io_test_obj_update
                                 /* dth->dth_local == false */
                                 tx_id = &dth->dth_xid;
                                 size = VOS_TS_TYPE_AKEY + akey_nr;
-	                        array_size = size * sizeof((*ts_set)->ts_entries[0]);
+                                array_size = size * sizeof((*ts_set)->ts_entries[0]);
                                 D_ALLOC(*ts_set, sizeof(**ts_set) + array_size);
                                 /* tx_id != NULL */
                                 uuid_copy((*ts_set)->ts_tx_id.dti_uuid, tx_id->dti_uuid);
@@ -269,13 +269,13 @@ io_test_obj_update
                         /* rc == 0 */
                         dth->dth_local_tx_started = 1; /* !!! */
                 /* dth->dth_dti_cos_count == 0 */
-                /* struct vos_container	*ic_cont; */
+                /* struct vos_container        *ic_cont; */
                 /* daos_unit_oid_t ic_oid; */
                 /* daos_epoch_range_t ic_epr; */
                 /* daos_epoch_t ic_bound; The epoch bound including uncertainty */
                 /* struct vos_object *ic_obj; reference on the object; A cached object (DRAM data structure). */
                 /* struct vos_ts_set *ic_ts_set; */
-                vos_obj_hold(occ = vos_obj_cache_current(ioc->ic_cont->vc_pool->vp_sysdb), cont = ioc->ic_cont, oid = ioc->ic_oid, &ioc->ic_epr, ioc->ic_bound, flags = VOS_OBJ_CREATE | VOS_OBJ_VISIBLE, intent = DAOS_INTENT_UPDATE, &ioc->ic_obj, ts_set = ioc->ic_ts_set);
+                err = vos_obj_hold(occ = vos_obj_cache_current(ioc->ic_cont->vc_pool->vp_sysdb), cont = ioc->ic_cont, oid = ioc->ic_oid, &ioc->ic_epr, ioc->ic_bound, flags = VOS_OBJ_CREATE | VOS_OBJ_VISIBLE, intent = DAOS_INTENT_UPDATE, &ioc->ic_obj, ts_set = ioc->ic_ts_set);
                         vos_obj_cache_current(standalone)
                                 return vos_obj_cache_get(standalone);
                                         /* struct vos_tls; VOS thread local storage structure */
@@ -289,21 +289,24 @@ io_test_obj_update
                         /* create == true */
                         /* visible_only == true */
                         void *create_flag = cont;
+                        /* create_flag points to vos_container ???*/
+                        /* Try to hold cont=75395cba, obj=22518002431819840.7291629702848970753.0.0 layout 0 create=true epr=0-1398c09a65c40001 */
                         /* Create the key for obj cache */
                         lkey.olk_cont = cont;
                         lkey.olk_oid = oid;
                         /* Find a ref in the cache \a lcache and take its reference. if reference is not found add it. */
+                        /* common DBUG src/common/lru.c:224 daos_lru_ref_hold() Inserting 0x555557a7a9a0 item into LRU Hash table */
                         rc = daos_lru_ref_hold(lcache = occ, key = &lkey, ksize = sizeof(lkey), create_args = create_flag, llink = &lret);
                         /* rc == 0 */
                         /* Object is in cache */
                         /* container_of(); given a pointer @ptr to the field @member embedded into type (usually struct) @type, return pointer to the embedding instance of @type. */
-	                /* struct daos_llink obj_llink; llink for daos lru cache */
+                        /* struct daos_llink obj_llink; llink for daos lru cache */
                         obj = container_of(ptr = lret, type = struct vos_object, member = obj_llink);
                         /* obj->obj_zombie == false */
                         /* intent == DAOS_INTENT_UPDATE */
                         /* obj->obj_df != NULL */
                         /* create == true */
-	                /* struct vos_obj_df *obj_df; Persistent memory address of the object; VOS object, assume all objects are KV store... NB: PMEM data structure. */
+                        /* struct vos_obj_df *obj_df; Persistent memory address of the object; VOS object, assume all objects are KV store... NB: PMEM data structure. */
                         /* struct ilog_df vo_ilog; Incarnation log for the object; Opaque root for incarnation log */
                         vos_ilog_ts_ignore(umem = vos_obj2umm(obj), ilog = &obj->obj_df->vo_ilog);
                                 /* DAOS_ON_VALGRIND == false */
@@ -316,15 +319,15 @@ io_test_obj_update
                                         /*
                                         struct ilog_root {
                                                 union {
-                                                        struct ilog_id		lr_id;
-                                                        struct ilog_tree	lr_tree;
+                                                        struct ilog_id                lr_id;
+                                                        struct ilog_tree        lr_tree;
                                                 };
-                                                uint32_t			lr_ts_idx;
-                                                uint32_t			lr_magic;
+                                                uint32_t                        lr_ts_idx;
+                                                uint32_t                        lr_magic;
                                         };
                                         */
                                         /* No validity check as index is just a constant offset */
-	                                struct ilog_root *root = (struct ilog_root *)ilog_df;
+                                        struct ilog_root *root = (struct ilog_root *)ilog_df;
                                         return &root->lr_ts_idx;
                                 vos_ts_set_add(ts_set, idx, record, rec_size);
                                         uint64_t hash = 0;
@@ -342,7 +345,7 @@ io_test_obj_update
                                         /* ts_set->ts_etype == VOS_TS_TYPE_OBJ (1) */
                                         /* daos_unit_oid_t; 192-bit object ID, it can identify a unique bottom level object. (a shard of upper level object). */
                                         daos_unit_oid_t *oid = (daos_unit_oid_t *)rec;
-	                                /* daos_obj_id_t id_pub; Public section, high level object ID */
+                                        /* daos_obj_id_t id_pub; Public section, high level object ID */
                                         /* uint64_t lo; least significant (low) bits of object ID */
                                         /* uint64_t hi; most significant (high) bits of object ID */
                                         hash = oid->id_pub.lo ^ oid->id_pub.hi;
@@ -355,7 +358,7 @@ io_test_obj_update
                                         /* uint32_t ti_type; Type identifier */
                                         expected_type = entry->te_info->ti_type;
                                         /* ts_set->ts_init_count == 2 */
-                                        struct vos_ts_set_entry	*se = &ts_set->ts_entries[ts_set->ts_init_count - 1];
+                                        struct vos_ts_set_entry        *se = &ts_set->ts_entries[ts_set->ts_init_count - 1];
                                         se->se_etype = ts_set->ts_etype;
                                         /* se->se_etype == 1 */
                                         /* se->se_etype > ts_set->ts_max_type */
@@ -371,14 +374,15 @@ io_test_obj_update
                         /* ts_set != NULL */
                         /* ts_set->ts_flags == 0 */
                         /* Check the incarnation log if an update is needed and update it.  Refreshes the log into \p entries.*/
-                        /* struct vos_ilog_info	obj_ilog_info; Cache of incarnation log */
-                        rc = vos_ilog_update(cont, ilog = &obj->obj_df->vo_ilog, epr, bound, parent = NULL, info = &obj->obj_ilog_info, cond_flag = cond_mask, ts_set);
+                        /* struct vos_ilog_info        obj_ilog_info; Cache of incarnation log */
+                        rc = vos_ilog_update_(cont, ilog = &obj->obj_df->vo_ilog, epr, bound, parent = NULL, info = &obj->obj_ilog_info, cond_flag = cond_mask, ts_set);
                                 dth = vos_dth_get(cont->vc_pool->vp_sysdb);
                                 daos_epoch_range_t max_epr = *epr;
                                 /* parent == NULL */
                                 bool has_cond = cond == VOS_ILOG_COND_UPDATE || cond == VOS_ILOG_COND_INSERT;
                                 /* has_cond == false */
-                                /* Do a fetch first.  The log may already exist */
+                                /* Checking and updating incarnation log in range 0-1398cddef0840001 */
+				/* Do a fetch first.  The log may already exist */
                                 /* Read (or refresh) the incarnation log into \p entries.  Internally, this will be a noop if the arguments are the same and nothing has changed since the last invocation. */
                                 rc = vos_ilog_fetch(umm = vos_cont2umm(cont), coh = vos_cont2hdl(cont), intent = DAOS_INTENT_UPDATE, ilog, epoch = epr->epr_hi, bound, has_cond, punched = NULL, parent, info);
                                         daos_epoch_range_t epr;
@@ -388,8 +392,8 @@ io_test_obj_update
                                                 struct ilog_desc_cbs cbs; /* Near term hack to hook things up with existing DTX */
                                                 /* Initialize callbacks for vos incarnation log */
                                                 vos_ilog_desc_cbs_init(&cbs, coh);
-                                                        cbs->dc_log_status_cb	= vos_ilog_status_get;
-                                                        cbs->dc_log_status_args	= (void *)(unsigned long)coh.cookie;
+                                                        cbs->dc_log_status_cb = vos_ilog_status_get;
+                                                        cbs->dc_log_status_args = (void *)(unsigned long)coh.cookie;
                                                         cbs->dc_is_same_tx_cb = vos_ilog_is_same_tx;
                                                         cbs->dc_is_same_tx_args = (void *)(unsigned long)coh.cookie;
                                                         cbs->dc_log_add_cb = vos_ilog_add;
@@ -440,15 +444,15 @@ io_test_obj_update
                                                                 struct ilog_id {
                                                                         // DTX of entry
                                                                         union {
-                                                                                uint64_t	id_value;
+                                                                                uint64_t        id_value;
                                                                                 struct {
-                                                                                        uint32_t	 id_tx_id;
-                                                                                        uint16_t	 id_punch_minor_eph;
-                                                                                        uint16_t	 id_update_minor_eph;
+                                                                                        uint32_t         id_tx_id;
+                                                                                        uint16_t         id_punch_minor_eph;
+                                                                                        uint16_t         id_update_minor_eph;
                                                                                 };
                                                                         };
                                                                         // timestamp of entry
-                                                                        daos_epoch_t	id_epoch;
+                                                                        daos_epoch_t        id_epoch;
                                                                 };
                                                                 */
                                                                 /* struct ilog_id *ac_entries; Pointer to entries */
@@ -485,7 +489,7 @@ io_test_obj_update
                                                                 /* status == ILOG_COMMITTED (1) */
                                                                 /* struct ilog_info *ie_info; Parsed information about each ilog entry */
                                                                 entries->ie_info[entries->ie_num_entries].ii_removed = 0; /** Used internally to indicate removal during aggregation */
-		                                                entries->ie_info[entries->ie_num_entries++].ii_status = status; /** Status of ilog entry */
+                                                                entries->ie_info[entries->ie_num_entries++].ii_status = status; /** Status of ilog entry */
                                                         /* entries->ie_num_entries != 0 */
                                                         priv->ip_rc = rc; /** Cached return code for fetch operation */
                                                 /* rc == 0 */
@@ -508,9 +512,6 @@ io_test_obj_update
                                                 /* struct vos_punch_record ii_prior_any_punch; If non-zero, prior committed or uncommitted punch */
                                                 info->ii_prior_any_punch.pr_epc = 0;
                                                 info->ii_prior_any_punch.pr_minor_epc = 0;
-
-                                                /* TODO */
-                                                
                                                 rc = vos_parse_ilog(info, epr, bound, &punch);
                                                         ilog_foreach_entry_reverse(&info->ii_entries, &entry) {
                                                                 /* vos_ilog_punched(&entry, punch) == false */
@@ -523,13 +524,17 @@ io_test_obj_update
                                                                 info->ii_create = entry.ie_id.id_epoch;
                                                         /* epr->epr_lo == 0 */
                                                         /* vos_epc_punched(info->ii_prior_punch.pr_epc, info->ii_prior_punch.pr_minor_epc, punch) == true */
-                                                        info->ii_prior_punch = *punch;
+                                                        info->ii_prior_punch = *punch; /* == NULL */*/
                                                         /* vos_epc_punched(info->ii_prior_any_punch.pr_epc, info->ii_prior_any_punch.pr_minor_epc, punch) == true */
-                                                        info->ii_prior_any_punch = *punch;
+                                                        info->ii_prior_any_punch = *punch; /* == NULL */
+
                                                 /* rc == 0 */
-                                                rc = vos_ilog_update_check(info, &max_epr);
-                                                /* rc == 0 */
-                                                /* cond == 0 */
+                                rc = vos_ilog_update_check(info, &max_epr);
+                                        /* No need to refetch the log.  The only field that is used by update
+                                         * is prior_any_punch.   This field will not be changed by ilog_update
+                                         * for the purpose of parsing the child log. */
+                                /* rc == 0 */
+                                /* cond == 0 */
                         /* rc == 0 */
                         /* obj->obj_df != NULL */
                         obj->obj_sync_epoch = obj->obj_df->vo_sync;
